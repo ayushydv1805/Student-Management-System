@@ -10,7 +10,7 @@ import java.util.List;
 public class StudentDAO {
     public List<Student> findAll(String search) throws SQLException {
         String sql = "SELECT s.*, d.department_name FROM students s LEFT JOIN departments d ON d.department_id=s.department_id " +
-                     "WHERE (? IS NULL OR s.roll_no LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ? OR s.email LIKE ?) ORDER BY s.student_id DESC";
+                     "WHERE (? IS NULL OR LOWER(s.roll_no) LIKE LOWER(?) OR LOWER(s.first_name) LIKE LOWER(?) OR LOWER(s.last_name) LIKE LOWER(?) OR LOWER(s.email) LIKE LOWER(?)) ORDER BY s.student_id DESC";
         List<Student> rows = new ArrayList<>();
         try (Connection c = Database.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
             String term = (search == null || search.isBlank()) ? null : "%" + search.trim() + "%";
@@ -67,7 +67,7 @@ public class StudentDAO {
     public void update(Student s) throws SQLException {
         String sql = "UPDATE students SET roll_no=?,first_name=?,last_name=?,email=?,phone=?,date_of_birth=?,gender=?,department_id=?,semester=?,status=? WHERE student_id=?";
         try (Connection c = Database.getConnection(); PreparedStatement p = c.prepareStatement(sql)) {
-            bind(p,s); p.setInt(11,s.getStudentId()); p.executeUpdate();
+            bind(p,s); p.setInt(11,s.getStudentId()); if(p.executeUpdate()==0)throw new SQLException("Student not found.");
         }
     }
 
@@ -82,7 +82,7 @@ public class StudentDAO {
 
     public void delete(int id) throws SQLException {
         try (Connection c = Database.getConnection(); PreparedStatement p = c.prepareStatement("DELETE FROM students WHERE student_id=?")) {
-            p.setInt(1,id); p.executeUpdate();
+            p.setInt(1,id); if(p.executeUpdate()==0)throw new SQLException("Student not found.");
         }
     }
 
