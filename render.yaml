@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: campusdesk-student-management
+    runtime: docker
+    region: singapore
+    plan: free
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: SMS_DB_URL
+        sync: false
+      - key: SMS_DB_USER
+        sync: false
+      - key: SMS_DB_PASSWORD
+        sync: false
+      - key: SMS_ADMIN_USER
+        sync: false
+      - key: SMS_ADMIN_PASSWORD
+        sync: false
