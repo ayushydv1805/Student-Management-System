@@ -37,8 +37,19 @@ jobs:
           mysql --host=127.0.0.1 --user=root < database/sample-data.sql
           student_count=$(mysql --host=127.0.0.1 --user=root --batch --skip-column-names -e "SELECT COUNT(*) FROM student_management_db.students")
           department_count=$(mysql --host=127.0.0.1 --user=root --batch --skip-column-names -e "SELECT COUNT(*) FROM student_management_db.departments")
+          course_count=$(mysql --host=127.0.0.1 --user=root --batch --skip-column-names -e "SELECT COUNT(*) FROM student_management_db.courses")
           test "$student_count" -ge 2
           test "$department_count" -ge 3
-          echo "Database validation passed: $student_count sample students, $department_count departments."
+          test "$course_count" -ge 1
+          mysql --host=127.0.0.1 --user=root student_management_db -e "INSERT IGNORE INTO enrollments(student_id,course_id,academic_year,semester) SELECT s.student_id,c.course_id,'2026-27',3 FROM students s CROSS JOIN courses c WHERE s.roll_no='CSE2026001' AND c.course_code='CS301'"
+          enrollment_count=$(mysql --host=127.0.0.1 --user=root --batch --skip-column-names -e "SELECT COUNT(*) FROM student_management_db.enrollments")
+          test "$enrollment_count" -ge 1
+          if mysql --host=127.0.0.1 --user=root student_management_db -e "INSERT INTO enrollments(student_id,course_id,academic_year,semester) SELECT s.student_id,c.course_id,'2026-27',3 FROM students s CROSS JOIN courses c WHERE s.roll_no='CSE2026001' AND c.course_code='CS301'"; then
+            echo "Duplicate enrollment was unexpectedly accepted."
+            exit 1
+          else
+            echo "Duplicate enrollment correctly rejected by the unique constraint."
+          fi
+          echo "Database validation passed: $student_count students, $department_count departments, $course_count courses, and $enrollment_count enrollment(s)."
       - name: Build WAR
         run: mvn --batch-mode clean package
