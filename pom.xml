@@ -21,6 +21,11 @@
       <artifactId>mysql-connector-j</artifactId>
       <version>9.4.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>42.7.14</version>
+    </dependency>
   </dependencies>
   <build>
     <finalName>student-management-system</finalName>
