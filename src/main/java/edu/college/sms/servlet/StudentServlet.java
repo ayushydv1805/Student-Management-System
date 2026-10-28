@@ -16,10 +16,18 @@ public class StudentServlet extends HttpServlet {
         try {
             String action = req.getParameter("action");
             if ("edit".equals(action) || "view".equals(action)) {
-                Student student = dao.findById(Integer.parseInt(req.getParameter("id")));
+                String id = req.getParameter("id");
+                if (id == null || !id.matches("\\d+")) { resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid student ID."); return; }
+                Student student = dao.findById(Integer.parseInt(id));
                 if (student == null) { resp.sendError(404); return; }
                 req.setAttribute("student", student);
+                req.setAttribute("departments", dao.findDepartments());
                 req.getRequestDispatcher("/student-form.jsp").forward(req,resp); return;
+            }
+            if ("add".equals(action)) {
+                req.setAttribute("departments", dao.findDepartments());
+                req.getRequestDispatcher("/student-form.jsp").forward(req,resp);
+                return;
             }
             req.setAttribute("students", dao.findAll(req.getParameter("q")));
             req.getRequestDispatcher("/students.jsp").forward(req, resp);
