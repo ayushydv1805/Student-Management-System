@@ -19,7 +19,7 @@ public class AcademicDAO {
             "ORDER BY c.course_code,s.last_name,s.first_name";
         List<Map<String,Object>> rows=new ArrayList<>();
         try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){
-            p.setDate(1,Date.valueOf(date));String q=search==null||search.isBlank()?null:"%"+search.trim()+"%";
+            p.setDate(1,java.sql.Date.valueOf(date));String q=search==null||search.isBlank()?null:"%"+search.trim()+"%";
             p.setString(2,q);p.setString(3,q);p.setString(4,q);p.setString(5,q);
             try(ResultSet r=p.executeQuery()){while(r.next()){
                 Map<String,Object> m=new LinkedHashMap<>();m.put("enrollmentId",r.getInt("enrollment_id"));m.put("year",r.getString("academic_year"));
@@ -31,7 +31,7 @@ public class AcademicDAO {
     public void saveAttendance(int enrollmentId, String date, String status) throws SQLException {
         String sql="INSERT INTO attendance(enrollment_id,attendance_date,attendance_status) VALUES(?,?,?) ON DUPLICATE KEY UPDATE attendance_status=VALUES(attendance_status)";
         try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){
-            p.setInt(1,enrollmentId);p.setDate(2,Date.valueOf(date));p.setString(3,status);p.executeUpdate();
+            p.setInt(1,enrollmentId);p.setDate(2,java.sql.Date.valueOf(date));p.setString(3,status);p.executeUpdate();
         }
     }
     public List<Map<String,Object>> courses() throws SQLException {
@@ -53,7 +53,7 @@ public class AcademicDAO {
     }
     public void saveAssessment(int courseId,String name,BigDecimal max,String date)throws SQLException{
         String sql="INSERT INTO assessments(course_id,assessment_name,max_marks,assessment_date) VALUES(?,?,?,?)";
-        try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){p.setInt(1,courseId);p.setString(2,name);p.setBigDecimal(3,max);if(date==null||date.isBlank())p.setNull(4,Types.DATE);else p.setDate(4,Date.valueOf(date));p.executeUpdate();}
+        try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){p.setInt(1,courseId);p.setString(2,name);p.setBigDecimal(3,max);if(date==null||date.isBlank())p.setNull(4,Types.DATE);else p.setDate(4,java.sql.Date.valueOf(date));p.executeUpdate();}
     }
     public Map<String,Object> assessment(int id)throws SQLException{
         try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement("SELECT assessment_id,assessment_name,max_marks,course_id FROM assessments WHERE assessment_id=?")){p.setInt(1,id);try(ResultSet r=p.executeQuery()){if(!r.next())return null;Map<String,Object> m=new LinkedHashMap<>();m.put("id",r.getInt(1));m.put("name",r.getString(2));m.put("max",r.getBigDecimal(3));m.put("courseId",r.getInt(4));return m;}}
