@@ -10,11 +10,9 @@ services:
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
-      - key: SMS_DB_URL
-        sync: false
-      - key: SMS_DB_USER
-        sync: false
-      - key: SMS_DB_PASSWORD
+      - key: SMS_GATEWAY_URL
+        value: https://nhqiaocrqjepzfidvkre.supabase.co/functions/v1/campusdesk-sql-gateway
+      - key: SMS_GATEWAY_TOKEN
         sync: false
       - key: SMS_ADMIN_USER
         sync: false
