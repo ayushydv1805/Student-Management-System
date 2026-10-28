@@ -29,9 +29,13 @@ public class AcademicDAO {
         }return rows;
     }
     public void saveAttendance(int enrollmentId, String date, String status) throws SQLException {
-        String sql="INSERT INTO attendance(enrollment_id,attendance_date,attendance_status) VALUES(?,?,?) ON DUPLICATE KEY UPDATE attendance_status=VALUES(attendance_status)";
-        try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){
-            p.setInt(1,enrollmentId);p.setDate(2,java.sql.Date.valueOf(date));p.setString(3,status);p.executeUpdate();
+        try (Connection c=Database.getConnection()) {
+            String sql=Database.isPostgres(c)
+                ? "INSERT INTO attendance(enrollment_id,attendance_date,attendance_status) VALUES(?,?,?) ON CONFLICT (enrollment_id,attendance_date) DO UPDATE SET attendance_status=EXCLUDED.attendance_status"
+                : "INSERT INTO attendance(enrollment_id,attendance_date,attendance_status) VALUES(?,?,?) ON DUPLICATE KEY UPDATE attendance_status=VALUES(attendance_status)";
+            try(PreparedStatement p=c.prepareStatement(sql)){
+                p.setInt(1,enrollmentId);p.setDate(2,java.sql.Date.valueOf(date));p.setString(3,status);p.executeUpdate();
+            }
         }
     }
     public List<Map<String,Object>> courses() throws SQLException {
@@ -66,8 +70,15 @@ public class AcademicDAO {
         List<Map<String,Object>> rows=new ArrayList<>();try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){p.setInt(1,assessmentId);try(ResultSet r=p.executeQuery()){while(r.next()){Map<String,Object> m=new LinkedHashMap<>();m.put("studentId",r.getInt("student_id"));m.put("roll",r.getString("roll_no"));m.put("student",r.getString("first_name")+" "+r.getString("last_name"));m.put("marks",r.getBigDecimal("marks_obtained"));m.put("max",r.getBigDecimal("max_marks"));rows.add(m);}}}return rows;
     }
     public void saveMarks(int assessmentId,int studentId,BigDecimal marks)throws SQLException{
-        String sql="INSERT INTO marks(assessment_id,student_id,marks_obtained) SELECT a.assessment_id,?,? FROM assessments a WHERE a.assessment_id=? AND ?<=a.max_marks AND EXISTS(SELECT 1 FROM enrollments e WHERE e.course_id=a.course_id AND e.student_id=?) ON DUPLICATE KEY UPDATE marks_obtained=VALUES(marks_obtained)";
-        try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){p.setInt(1,studentId);p.setBigDecimal(2,marks);p.setInt(3,assessmentId);p.setBigDecimal(4,marks);p.setInt(5,studentId);if(p.executeUpdate()==0)throw new SQLException("Marks must be within the maximum and the student must be enrolled in the assessment course.");}
+        try(Connection c=Database.getConnection()){
+            String sql=Database.isPostgres(c)
+                ? "INSERT INTO marks(assessment_id,student_id,marks_obtained) SELECT a.assessment_id,?,? FROM assessments a WHERE a.assessment_id=? AND ?<=a.max_marks AND EXISTS(SELECT 1 FROM enrollments e WHERE e.course_id=a.course_id AND e.student_id=?) ON CONFLICT (assessment_id,student_id) DO UPDATE SET marks_obtained=EXCLUDED.marks_obtained"
+                : "INSERT INTO marks(assessment_id,student_id,marks_obtained) SELECT a.assessment_id,?,? FROM assessments a WHERE a.assessment_id=? AND ?<=a.max_marks AND EXISTS(SELECT 1 FROM enrollments e WHERE e.course_id=a.course_id AND e.student_id=?) ON DUPLICATE KEY UPDATE marks_obtained=VALUES(marks_obtained)";
+            try(PreparedStatement p=c.prepareStatement(sql)){
+                p.setInt(1,studentId);p.setBigDecimal(2,marks);p.setInt(3,assessmentId);p.setBigDecimal(4,marks);p.setInt(5,studentId);
+                if(p.executeUpdate()==0)throw new SQLException("Marks must be within the maximum and the student must be enrolled in the assessment course.");
+            }
+        }
     }
     public List<Map<String,Object>> performance(String search)throws SQLException{
         String sql="SELECT s.student_id,s.roll_no,s.first_name,s.last_name, " +
