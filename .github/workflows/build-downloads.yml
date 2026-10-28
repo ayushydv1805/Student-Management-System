@@ -10,15 +10,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   android-apk:
     name: Build Android APK
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -37,7 +36,7 @@ jobs:
           echo "$RUNNER_TEMP/gradle-8.9/bin" >> "$GITHUB_PATH"
       - name: Build installable APK
         run: gradle --no-daemon --stacktrace -p android assembleDebug
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: CampusDesk-Android-APK
@@ -49,8 +48,7 @@ jobs:
     name: Build Windows installer
     runs-on: windows-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -61,10 +59,48 @@ jobs:
       - name: Build Windows installer
         working-directory: desktop
         run: npm run dist -- --publish never
-      - name: Upload Windows installer
+      - name: Upload Windows installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: CampusDesk-Windows-Installer
           path: desktop/dist/*.exe
           if-no-files-found: error
           retention-days: 30
+
+  publish-release:
+    name: Publish permanent download links
+    runs-on: ubuntu-latest
+    needs: [android-apk, windows-installer]
+    steps:
+      - name: Download Windows installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: CampusDesk-Windows-Installer
+          path: release-assets/windows
+      - name: Download Android APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: CampusDesk-Android-APK
+          path: release-assets/android
+      - name: Prepare release files
+        run: |
+          set -euo pipefail
+          windows_file="$(find release-assets/windows -type f -iname '*.exe' -print -quit)"
+          android_file="$(find release-assets/android -type f -iname '*.apk' -print -quit)"
+          test -n "$windows_file"
+          test -n "$android_file"
+          cp "$windows_file" release-assets/CampusDesk-Setup.exe
+          cp "$android_file" release-assets/CampusDesk.apk
+          file release-assets/CampusDesk-Setup.exe release-assets/CampusDesk.apk
+          ls -lh release-assets/CampusDesk-Setup.exe release-assets/CampusDesk.apk
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: campusdesk-v1.0.0
+          name: CampusDesk v1.0.0
+          body: CampusDesk desktop and Android installers. Both apps connect to the hosted CampusDesk website and require internet access.
+          files: |
+            release-assets/CampusDesk-Setup.exe
+            release-assets/CampusDesk.apk
+          fail_on_unmatched_files: true
+          make_latest: false
