@@ -9,7 +9,7 @@ public class CourseDAO {
         String sql = "SELECT c.course_id,c.course_code,c.course_name,c.credits,d.department_name,f.faculty_name " +
             "FROM courses c LEFT JOIN departments d ON d.department_id=c.department_id " +
             "LEFT JOIN faculty f ON f.faculty_id=c.faculty_id " +
-            "WHERE (? IS NULL OR c.course_code LIKE ? OR c.course_name LIKE ? OR d.department_name LIKE ?) ORDER BY c.course_code";
+            "WHERE (? IS NULL OR LOWER(c.course_code) LIKE LOWER(?) OR LOWER(c.course_name) LIKE LOWER(?) OR LOWER(d.department_name) LIKE LOWER(?)) ORDER BY c.course_code";
         List<Map<String,Object>> rows = new ArrayList<>();
         try (Connection c=Database.getConnection(); PreparedStatement p=c.prepareStatement(sql)) {
             String q=(search==null||search.isBlank())?null:"%"+search.trim()+"%";
@@ -76,7 +76,7 @@ public class CourseDAO {
                 check.setInt(1,id);check.setInt(2,id);
                 try(ResultSet r=check.executeQuery()){r.next();if(r.getInt(1)>0)throw new SQLException("This course has enrollments or assessments. Remove linked academic records before deleting the course.");}
             }
-            try(PreparedStatement p=c.prepareStatement("DELETE FROM courses WHERE course_id=?")){p.setInt(1,id);p.executeUpdate();}
+            try(PreparedStatement p=c.prepareStatement("DELETE FROM courses WHERE course_id=?")){p.setInt(1,id);if(p.executeUpdate()==0)throw new SQLException("Course not found.");}
         }
     }
 }
