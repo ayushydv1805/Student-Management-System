@@ -8,6 +8,10 @@ A DBMS academic project built with **Java, JDBC, MySQL, JSP, Servlets, HTML, and
 - Department dropdown populated from MySQL, with server-side checks for required fields, email format, semester, status, and record IDs
 - Course catalog CRUD with department/faculty assignment, search, and credit validation
 - Student-course enrollment registration with academic year/semester, search, removal, and duplicate-term protection
+- Daily attendance entry by date with Present, Absent, Late, and Excused statuses; re-saving a date updates the existing record
+- Course assessments with maximum marks and optional assessment date
+- Marks entry for students enrolled in the assessment course, with server-side validation against maximum marks
+- Student performance report combining course enrollments, assessment completion, average mark percentage, and attendance percentage
 - Course deletion is blocked while enrollments exist to avoid accidentally removing linked academic records
 - Normalized relational schema for departments, students, faculty, courses, enrollments, attendance, assessments, marks, and admin users
 - SQL sample data and practice queries
@@ -38,6 +42,5 @@ Do not commit database passwords or production secrets. This is an academic star
 ## Project structure
 - `database/` — schema, sample data, practice SQL
 - `src/main/java/` — JDBC configuration, model, DAO, servlets
-- `src/main/webapp/` — JSP pages for dashboard, students, courses, and enrollments
-- `src/main/webapp/` — JSP pages, CSS, web configuration
+- `src/main/webapp/` — JSP pages for dashboard, students, courses, enrollments, attendance, assessments, marks, and performance reports
 - `docs/` — ER diagram and report outline
