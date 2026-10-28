@@ -1,4 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%-- Route direct home-page visits through the dashboard servlet so database statistics are loaded. --%>
+<% if (request.getAttribute("studentCount") == null || request.getAttribute("departmentCount") == null) { response.sendRedirect(request.getContextPath() + "/dashboard"); return; } %>
 <%!
 private String esc(Object value) {
   if (value == null) return "";
