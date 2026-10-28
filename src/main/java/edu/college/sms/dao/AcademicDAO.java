@@ -59,7 +59,7 @@ public class AcademicDAO {
         try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement("SELECT assessment_id,assessment_name,max_marks,course_id FROM assessments WHERE assessment_id=?")){p.setInt(1,id);try(ResultSet r=p.executeQuery()){if(!r.next())return null;Map<String,Object> m=new LinkedHashMap<>();m.put("id",r.getInt(1));m.put("name",r.getString(2));m.put("max",r.getBigDecimal(3));m.put("courseId",r.getInt(4));return m;}}
     }
     public List<Map<String,Object>> marks(int assessmentId)throws SQLException{
-        String sql="SELECT e.student_id,s.roll_no,s.first_name,s.last_name,m.marks_obtained,a.max_marks " +
+        String sql="SELECT DISTINCT e.student_id,s.roll_no,s.first_name,s.last_name,m.marks_obtained,a.max_marks " +
             "FROM assessments a JOIN enrollments e ON e.course_id=a.course_id JOIN students s ON s.student_id=e.student_id " +
             "LEFT JOIN marks m ON m.assessment_id=a.assessment_id AND m.student_id=s.student_id " +
             "WHERE a.assessment_id=? ORDER BY s.last_name,s.first_name";
@@ -70,9 +70,21 @@ public class AcademicDAO {
         try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){p.setInt(1,studentId);p.setBigDecimal(2,marks);p.setInt(3,assessmentId);p.setBigDecimal(4,marks);p.setInt(5,studentId);if(p.executeUpdate()==0)throw new SQLException("Marks must be within the maximum and the student must be enrolled in the assessment course.");}
     }
     public List<Map<String,Object>> performance(String search)throws SQLException{
-        String sql="SELECT s.student_id,s.roll_no,s.first_name,s.last_name,COUNT(DISTINCT e.enrollment_id) AS courses,COUNT(DISTINCT a.assessment_id) AS assessments,COUNT(DISTINCT m.mark_id) AS marks_entered,ROUND(AVG(CASE WHEN m.mark_id IS NOT NULL THEN m.marks_obtained/a.max_marks*100 END),2) AS average_percent,ROUND(100.0*SUM(CASE WHEN at.attendance_status IN ('PRESENT','LATE','EXCUSED') THEN 1 ELSE 0 END)/NULLIF(COUNT(at.attendance_id),0),2) AS attendance_percent " +
-            "FROM students s LEFT JOIN enrollments e ON e.student_id=s.student_id LEFT JOIN assessments a ON a.course_id=e.course_id LEFT JOIN marks m ON m.assessment_id=a.assessment_id AND m.student_id=s.student_id LEFT JOIN attendance at ON at.enrollment_id=e.enrollment_id " +
-            "WHERE (? IS NULL OR s.roll_no LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ?) GROUP BY s.student_id,s.roll_no,s.first_name,s.last_name ORDER BY s.last_name,s.first_name";
-        List<Map<String,Object>> rows=new ArrayList<>();try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){String q=search==null||search.isBlank()?null:"%"+search.trim()+"%";p.setString(1,q);p.setString(2,q);p.setString(3,q);p.setString(4,q);try(ResultSet r=p.executeQuery()){while(r.next()){Map<String,Object> m=new LinkedHashMap<>();m.put("roll",r.getString("roll_no"));m.put("student",r.getString("first_name")+" "+r.getString("last_name"));m.put("courses",r.getInt("courses"));m.put("assessments",r.getInt("assessments"));m.put("marksEntered",r.getInt("marks_entered"));m.put("average",r.getBigDecimal("average_percent"));m.put("attendance",r.getBigDecimal("attendance_percent"));rows.add(m);}}}return rows;
+        String sql="SELECT s.student_id,s.roll_no,s.first_name,s.last_name, " +
+            "(SELECT COUNT(*) FROM enrollments e WHERE e.student_id=s.student_id) AS courses, " +
+            "(SELECT COUNT(DISTINCT a.assessment_id) FROM assessments a JOIN enrollments e ON e.course_id=a.course_id WHERE e.student_id=s.student_id) AS assessments, " +
+            "(SELECT COUNT(*) FROM marks m WHERE m.student_id=s.student_id) AS marks_entered, " +
+            "(SELECT ROUND(AVG(m.marks_obtained/a.max_marks*100),2) FROM marks m JOIN assessments a ON a.assessment_id=m.assessment_id WHERE m.student_id=s.student_id) AS average_percent, " +
+            "(SELECT ROUND(100.0*SUM(CASE WHEN at.attendance_status IN ('PRESENT','LATE','EXCUSED') THEN 1 ELSE 0 END)/NULLIF(COUNT(*),0),2) FROM attendance at JOIN enrollments e ON e.enrollment_id=at.enrollment_id WHERE e.student_id=s.student_id) AS attendance_percent " +
+            "FROM students s WHERE (? IS NULL OR s.roll_no LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ?) ORDER BY s.last_name,s.first_name";
+        List<Map<String,Object>> rows=new ArrayList<>();
+        try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){
+            String q=search==null||search.isBlank()?null:"%"+search.trim()+"%";p.setString(1,q);p.setString(2,q);p.setString(3,q);p.setString(4,q);
+            try(ResultSet r=p.executeQuery()){while(r.next()){
+                Map<String,Object> m=new LinkedHashMap<>();m.put("roll",r.getString("roll_no"));m.put("student",r.getString("first_name")+" "+r.getString("last_name"));
+                m.put("courses",r.getInt("courses"));m.put("assessments",r.getInt("assessments"));m.put("marksEntered",r.getInt("marks_entered"));
+                m.put("average",r.getBigDecimal("average_percent"));m.put("attendance",r.getBigDecimal("attendance_percent"));rows.add(m);
+            }}
+        }return rows;
     }
 }
