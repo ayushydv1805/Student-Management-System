@@ -8,7 +8,7 @@ public class EnrollmentDAO {
     public List<Map<String,Object>> findAll(String search) throws SQLException {
         String sql="SELECT e.enrollment_id,e.academic_year,e.semester,s.roll_no,s.first_name,s.last_name,c.course_code,c.course_name " +
             "FROM enrollments e JOIN students s ON s.student_id=e.student_id JOIN courses c ON c.course_id=e.course_id " +
-            "WHERE (? IS NULL OR s.roll_no LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ? OR c.course_code LIKE ? OR c.course_name LIKE ?) " +
+            "WHERE (? IS NULL OR LOWER(s.roll_no) LIKE LOWER(?) OR LOWER(s.first_name) LIKE LOWER(?) OR LOWER(s.last_name) LIKE LOWER(?) OR LOWER(c.course_code) LIKE LOWER(?) OR LOWER(c.course_name) LIKE LOWER(?)) " +
             "ORDER BY e.academic_year DESC,e.semester DESC,s.last_name,c.course_code";
         List<Map<String,Object>> rows=new ArrayList<>();
         try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){
@@ -41,6 +41,6 @@ public class EnrollmentDAO {
         }
     }
     public void delete(int id)throws SQLException{
-        try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement("DELETE FROM enrollments WHERE enrollment_id=?")){p.setInt(1,id);p.executeUpdate();}
+        try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement("DELETE FROM enrollments WHERE enrollment_id=?")){p.setInt(1,id);if(p.executeUpdate()==0)throw new SQLException("Enrollment not found.");}
     }
 }
