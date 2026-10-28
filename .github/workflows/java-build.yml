@@ -50,9 +50,9 @@ jobs:
           else
             echo "Duplicate enrollment correctly rejected by the unique constraint."
           fi
-          mysql --host=127.0.0.1 --user=root student_management_db -e "INSERT INTO attendance(enrollment_id,attendance_date,attendance_status) SELECT enrollment_id,CURRENT_DATE,\x27PRESENT\x27 FROM enrollments WHERE academic_year=\x272026-27\x27 AND semester=3 LIMIT 1; INSERT INTO assessments(course_id,assessment_name,max_marks,assessment_date) SELECT course_id,\x27CI assessment\x27,30,CURRENT_DATE FROM courses WHERE course_code=\x27CS301\x27; INSERT INTO marks(assessment_id,student_id,marks_obtained) SELECT a.assessment_id,e.student_id,25 FROM assessments a JOIN enrollments e ON e.course_id=a.course_id WHERE a.assessment_name=\x27CI assessment\x27 AND e.academic_year=\x272026-27\x27 AND e.semester=3 LIMIT 1;"
+          mysql --host=127.0.0.1 --user=root student_management_db -e "INSERT INTO attendance(enrollment_id,attendance_date,attendance_status) SELECT enrollment_id,CURRENT_DATE,'PRESENT' FROM enrollments WHERE academic_year='2026-27' AND semester=3 LIMIT 1; INSERT INTO assessments(course_id,assessment_name,max_marks,assessment_date) SELECT course_id,'CI assessment',30,CURRENT_DATE FROM courses WHERE course_code='CS301'; INSERT INTO marks(assessment_id,student_id,marks_obtained) SELECT a.assessment_id,e.student_id,25 FROM assessments a JOIN enrollments e ON e.course_id=a.course_id WHERE a.assessment_name='CI assessment' AND e.academic_year='2026-27' AND e.semester=3 LIMIT 1;"
           attendance_count=$(mysql --host=127.0.0.1 --user=root --batch --skip-column-names -e "SELECT COUNT(*) FROM student_management_db.attendance")
-          assessment_count=$(mysql --host=127.0.0.1 --user=root --batch --skip-column-names -e "SELECT COUNT(*) FROM student_management_db.assessments WHERE assessment_name=\x27CI assessment\x27")
+          assessment_count=$(mysql --host=127.0.0.1 --user=root --batch --skip-column-names -e "SELECT COUNT(*) FROM student_management_db.assessments WHERE assessment_name='CI assessment'")
           marks_count=$(mysql --host=127.0.0.1 --user=root --batch --skip-column-names -e "SELECT COUNT(*) FROM student_management_db.marks WHERE marks_obtained=25")
           test "$attendance_count" -ge 1
           test "$assessment_count" -ge 1
