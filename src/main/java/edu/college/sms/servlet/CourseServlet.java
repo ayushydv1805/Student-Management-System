@@ -6,6 +6,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.Arrays;
+import java.sql.SQLException;
 
 @WebServlet("/courses")
 public class CourseServlet extends HttpServlet {
@@ -16,8 +17,9 @@ public class CourseServlet extends HttpServlet {
             if("add".equals(action)||"edit".equals(action)){
                 if("edit".equals(action)){
                     String raw=req.getParameter("id");
-                    if(raw==null||!raw.matches("\\d+")){resp.sendError(400,"Invalid course ID.");return;}
-                    var course=dao.findById(Integer.parseInt(raw));
+                    Integer courseId=RequestValidation.positiveInt(raw);
+                    if(courseId==null){resp.sendError(400,"Invalid course ID.");return;}
+                    var course=dao.findById(courseId);
                     if(course==null){resp.sendError(404,"Course not found.");return;}
                     req.setAttribute("course",course);
                 }
@@ -33,8 +35,8 @@ public class CourseServlet extends HttpServlet {
         try{
             String action=req.getParameter("action");
             if("delete".equals(action)){
-                String raw=req.getParameter("id");if(raw==null||!raw.matches("\\d+")){resp.sendError(400,"Invalid course ID.");return;}
-                dao.delete(Integer.parseInt(raw));resp.sendRedirect(req.getContextPath()+"/courses?message=deleted");return;
+                Integer courseId=RequestValidation.positiveInt(req.getParameter("id"));if(courseId==null){resp.sendError(400,"Invalid course ID.");return;}
+                dao.delete(courseId);resp.sendRedirect(req.getContextPath()+"/courses?message=deleted");return;
             }
             String id=req.getParameter("courseId"),code=req.getParameter("courseCode"),name=req.getParameter("courseName");
             String creditValue=req.getParameter("credits"),dept=req.getParameter("departmentId"),faculty=req.getParameter("facultyId");
@@ -44,8 +46,8 @@ public class CourseServlet extends HttpServlet {
             if(creditValue==null||!creditValue.matches("\\d{1,2}")||Integer.parseInt(creditValue)<1||Integer.parseInt(creditValue)>10){
                 resp.sendError(400,"Credits must be between 1 and 10.");return;
             }
-            if(id!=null&&!id.isBlank()&&!id.matches("\\d+")){resp.sendError(400,"Invalid course ID.");return;}
-            if(dept!=null&&!dept.isBlank()&&!dept.matches("\\d+")||faculty!=null&&!faculty.isBlank()&&!faculty.matches("\\d+")){
+            if(id!=null&&!id.isBlank()&&RequestValidation.positiveInt(id)==null){resp.sendError(400,"Invalid course ID.");return;}
+            if((dept!=null&&!dept.isBlank()&&RequestValidation.positiveInt(dept)==null)||(faculty!=null&&!faculty.isBlank()&&RequestValidation.positiveInt(faculty)==null)){
                 resp.sendError(400,"Choose a valid department and faculty member.");return;
             }
             Integer departmentId=dept==null||dept.isBlank()?null:Integer.valueOf(dept);
@@ -53,6 +55,7 @@ public class CourseServlet extends HttpServlet {
             if(id==null||id.isBlank())dao.save(code.trim(),name.trim(),Integer.parseInt(creditValue),departmentId,facultyId);
             else dao.update(Integer.parseInt(id),code.trim(),name.trim(),Integer.parseInt(creditValue),departmentId,facultyId);
             resp.sendRedirect(req.getContextPath()+"/courses?message=saved");
-        }catch(Exception e){throw new ServletException("Unable to save course. Check duplicate course codes and selected records.",e);}
+        }catch(SQLException e){if(e.getMessage()!=null&&e.getMessage().contains("This course has enrollments or assessments")){resp.sendError(HttpServletResponse.SC_CONFLICT,e.getMessage());}else{throw new ServletException("Unable to save course. Check duplicate course codes and selected records.",e);}}
+        catch(Exception e){throw new ServletException("Unable to save course. Check duplicate course codes and selected records.",e);}
     }
 }
