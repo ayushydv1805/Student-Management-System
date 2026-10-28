@@ -2,6 +2,7 @@ package edu.college.sms.dao;
 
 import edu.college.sms.config.Database;
 import edu.college.sms.model.Student;
+import edu.college.sms.model.Department;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,23 @@ public class StudentDAO {
             p.setInt(1, id);
             try (ResultSet r = p.executeQuery()) { return r.next() ? map(r) : null; }
         }
+    }
+
+    public List<Department> findDepartments() throws SQLException {
+        String sql = "SELECT department_id, department_name, department_code FROM departments ORDER BY department_name";
+        List<Department> rows = new ArrayList<>();
+        try (Connection c = Database.getConnection();
+             PreparedStatement p = c.prepareStatement(sql);
+             ResultSet r = p.executeQuery()) {
+            while (r.next()) {
+                Department d = new Department();
+                d.setDepartmentId(r.getInt("department_id"));
+                d.setDepartmentName(r.getString("department_name"));
+                d.setDepartmentCode(r.getString("department_code"));
+                rows.add(d);
+            }
+        }
+        return rows;
     }
 
     public int countAll() throws SQLException {
