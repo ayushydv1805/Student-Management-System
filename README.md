@@ -6,6 +6,9 @@ A DBMS academic project built with **Java, JDBC, MySQL, JSP, Servlets, HTML, and
 - Dashboard with database-backed student statistics
 - Student listing, searching, adding, editing, viewing, and deleting
 - Department dropdown populated from MySQL, with server-side checks for required fields, email format, semester, status, and record IDs
+- Course catalog CRUD with department/faculty assignment, search, and credit validation
+- Student-course enrollment registration with academic year/semester, search, removal, and duplicate-term protection
+- Course deletion is blocked while enrollments exist to avoid accidentally removing linked academic records
 - Normalized relational schema for departments, students, faculty, courses, enrollments, attendance, assessments, marks, and admin users
 - SQL sample data and practice queries
 - Responsive interface
@@ -35,5 +38,6 @@ Do not commit database passwords or production secrets. This is an academic star
 ## Project structure
 - `database/` — schema, sample data, practice SQL
 - `src/main/java/` — JDBC configuration, model, DAO, servlets
+- `src/main/webapp/` — JSP pages for dashboard, students, courses, and enrollments
 - `src/main/webapp/` — JSP pages, CSS, web configuration
 - `docs/` — ER diagram and report outline
