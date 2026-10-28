@@ -1,0 +1,68 @@
+name: Build CampusDesk downloads
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'desktop/**'
+      - '.github/workflows/build-downloads.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Install Gradle
+        run: |
+          curl --fail --location --silent --show-error https://services.gradle.org/distributions/gradle-8.9-bin.zip --output "$RUNNER_TEMP/gradle.zip"
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-8.9/bin" >> "$GITHUB_PATH"
+      - name: Build installable APK
+        run: gradle --no-daemon --stacktrace -p android assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: CampusDesk-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+  windows-installer:
+    name: Build Windows installer
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install desktop app dependencies
+        working-directory: desktop
+        run: npm install
+      - name: Build Windows installer
+        working-directory: desktop
+        run: npm run dist -- --publish never
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: CampusDesk-Windows-Installer
+          path: desktop/dist/*.exe
+          if-no-files-found: error
+          retention-days: 30
