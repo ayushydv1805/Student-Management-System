@@ -5,6 +5,7 @@ A DBMS academic project built with **Java, JDBC, MySQL, JSP, Servlets, HTML, and
 ## Features
 - Dashboard with database-backed student statistics
 - Student listing, searching, adding, editing, viewing, and deleting
+- Department dropdown populated from MySQL, with server-side checks for required fields, email format, semester, status, and record IDs
 - Normalized relational schema for departments, students, faculty, courses, enrollments, attendance, assessments, marks, and admin users
 - SQL sample data and practice queries
 - Responsive interface
