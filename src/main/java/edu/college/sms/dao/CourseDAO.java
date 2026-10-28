@@ -71,6 +71,12 @@ public class CourseDAO {
         if(facultyId==null)p.setNull(5,Types.INTEGER);else p.setInt(5,facultyId);
     }
     public void delete(int id)throws SQLException{
-        try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement("DELETE FROM courses WHERE course_id=?")){p.setInt(1,id);p.executeUpdate();}
+        try(Connection c=Database.getConnection()){
+            try(PreparedStatement check=c.prepareStatement("SELECT COUNT(*) FROM enrollments WHERE course_id=?")){
+                check.setInt(1,id);
+                try(ResultSet r=check.executeQuery()){r.next();if(r.getInt(1)>0)throw new SQLException("This course has enrollments. Remove its enrollments before deleting the course.");}
+            }
+            try(PreparedStatement p=c.prepareStatement("DELETE FROM courses WHERE course_id=?")){p.setInt(1,id);p.executeUpdate();}
+        }
     }
 }
