@@ -86,7 +86,7 @@ public final class HttpSqlConnection {
                 Map<String,Object> result=execute(endpoint,token,sql,values,"query");
                 Object rawRows=result.get("rows");
                 @SuppressWarnings("unchecked") List<Map<String,Object>> rows=rawRows instanceof List<?> ? (List<Map<String,Object>>)rawRows : List.of();
-                return resultSet(rows,proxy);
+                return resultSet(rows,(PreparedStatement)proxy);
             }
             if ("executeUpdate".equals(name)) {
                 Map<String,Object> result=execute(endpoint,token,sql,values,"update");
