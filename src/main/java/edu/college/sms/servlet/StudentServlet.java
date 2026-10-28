@@ -23,7 +23,7 @@ public class StudentServlet extends HttpServlet {
                 Student student = dao.findById(Integer.parseInt(req.getParameter("id")));
                 if (student == null) { resp.sendError(404); return; }
                 req.setAttribute("student", student);
-                if ("view".equals(action)) { req.getRequestDispatcher("/student-form.jsp").forward(req,resp); return; }
+                req.getRequestDispatcher("/student-form.jsp").forward(req,resp); return;
             }
             req.setAttribute("students", dao.findAll(req.getParameter("q")));
             req.getRequestDispatcher("/students.jsp").forward(req, resp);
