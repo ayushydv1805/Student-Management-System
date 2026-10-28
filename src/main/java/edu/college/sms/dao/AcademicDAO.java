@@ -15,7 +15,7 @@ public class AcademicDAO {
         String sql="SELECT e.enrollment_id,e.academic_year,e.semester,s.roll_no,s.first_name,s.last_name,c.course_code,c.course_name,a.attendance_status " +
             "FROM enrollments e JOIN students s ON s.student_id=e.student_id JOIN courses c ON c.course_id=e.course_id " +
             "LEFT JOIN attendance a ON a.enrollment_id=e.enrollment_id AND a.attendance_date=? " +
-            "WHERE (? IS NULL OR s.roll_no LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ? OR c.course_code LIKE ?) " +
+            "WHERE (? IS NULL OR LOWER(s.roll_no) LIKE LOWER(?) OR LOWER(s.first_name) LIKE LOWER(?) OR LOWER(s.last_name) LIKE LOWER(?) OR LOWER(c.course_code) LIKE LOWER(?)) " +
             "ORDER BY c.course_code,s.last_name,s.first_name";
         List<Map<String,Object>> rows=new ArrayList<>();
         try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){
@@ -47,7 +47,7 @@ public class AcademicDAO {
     public List<Map<String,Object>> assessments(String search) throws SQLException {
         String sql="SELECT a.assessment_id,a.assessment_name,a.max_marks,a.assessment_date,c.course_id,c.course_code,c.course_name,COUNT(m.mark_id) AS entered_count " +
             "FROM assessments a JOIN courses c ON c.course_id=a.course_id LEFT JOIN marks m ON m.assessment_id=a.assessment_id " +
-            "WHERE (? IS NULL OR a.assessment_name LIKE ? OR c.course_code LIKE ? OR c.course_name LIKE ?) " +
+            "WHERE (? IS NULL OR LOWER(a.assessment_name) LIKE LOWER(?) OR LOWER(c.course_code) LIKE LOWER(?) OR LOWER(c.course_name) LIKE LOWER(?)) " +
             "GROUP BY a.assessment_id,a.assessment_name,a.max_marks,a.assessment_date,c.course_id,c.course_code,c.course_name ORDER BY a.assessment_date DESC,a.assessment_id DESC";
         List<Map<String,Object>> rows=new ArrayList<>();
         try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){
@@ -87,7 +87,7 @@ public class AcademicDAO {
             "(SELECT COUNT(*) FROM marks m WHERE m.student_id=s.student_id) AS marks_entered, " +
             "(SELECT ROUND(AVG(m.marks_obtained/a.max_marks*100),2) FROM marks m JOIN assessments a ON a.assessment_id=m.assessment_id WHERE m.student_id=s.student_id) AS average_percent, " +
             "(SELECT ROUND(100.0*SUM(CASE WHEN at.attendance_status IN ('PRESENT','LATE','EXCUSED') THEN 1 ELSE 0 END)/NULLIF(COUNT(*),0),2) FROM attendance at JOIN enrollments e ON e.enrollment_id=at.enrollment_id WHERE e.student_id=s.student_id) AS attendance_percent " +
-            "FROM students s WHERE (? IS NULL OR s.roll_no LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ?) ORDER BY s.last_name,s.first_name";
+            "FROM students s WHERE (? IS NULL OR LOWER(s.roll_no) LIKE LOWER(?) OR LOWER(s.first_name) LIKE LOWER(?) OR LOWER(s.last_name) LIKE LOWER(?)) ORDER BY s.last_name,s.first_name";
         List<Map<String,Object>> rows=new ArrayList<>();
         try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement(sql)){
             String q=search==null||search.isBlank()?null:"%"+search.trim()+"%";p.setString(1,q);p.setString(2,q);p.setString(3,q);p.setString(4,q);
