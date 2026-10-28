@@ -15,10 +15,6 @@ public class StudentServlet extends HttpServlet {
     @Override protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
             String action = req.getParameter("action");
-            if ("delete".equals(action)) {
-                dao.delete(Integer.parseInt(req.getParameter("id")));
-                resp.sendRedirect(req.getContextPath()+"/students?message=deleted"); return;
-            }
             if ("edit".equals(action) || "view".equals(action)) {
                 Student student = dao.findById(Integer.parseInt(req.getParameter("id")));
                 if (student == null) { resp.sendError(404); return; }
@@ -33,6 +29,17 @@ public class StudentServlet extends HttpServlet {
     @Override protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         try {
+            String action = req.getParameter("action");
+            if ("delete".equals(action)) {
+                String deleteId = req.getParameter("id");
+                if (deleteId == null || !deleteId.matches("\\d+")) {
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid student ID.");
+                    return;
+                }
+                dao.delete(Integer.parseInt(deleteId));
+                resp.sendRedirect(req.getContextPath()+"/students?message=deleted");
+                return;
+            }
             Student s = new Student();
             String id = req.getParameter("studentId");
             if (id != null && !id.isBlank()) s.setStudentId(Integer.parseInt(id));
