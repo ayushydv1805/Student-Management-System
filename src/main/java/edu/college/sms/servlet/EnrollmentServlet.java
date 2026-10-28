@@ -25,12 +25,13 @@ public class EnrollmentServlet extends HttpServlet {
         try{
             String action=req.getParameter("action");
             if("delete".equals(action)){
-                String raw=req.getParameter("id");if(raw==null||!raw.matches("\\d+")){resp.sendError(400,"Invalid enrollment ID.");return;}
-                dao.delete(Integer.parseInt(raw));resp.sendRedirect(req.getContextPath()+"/enrollments?message=deleted");return;
+                Integer enrollmentId=RequestValidation.positiveInt(req.getParameter("id"));if(enrollmentId==null){resp.sendError(400,"Invalid enrollment ID.");return;}
+                dao.delete(enrollmentId);resp.sendRedirect(req.getContextPath()+"/enrollments?message=deleted");return;
             }
             String student=req.getParameter("studentId"),course=req.getParameter("courseId"),year=req.getParameter("academicYear"),semester=req.getParameter("semester");
-            if(student==null||!student.matches("\\d+")||course==null||!course.matches("\\d+")){
-                resp.sendError(400,"Select a student and course.");return;
+            Integer studentId=RequestValidation.positiveInt(student),courseId=RequestValidation.positiveInt(course);
+            if(studentId==null||courseId==null){
+                resp.sendError(400,"Select a valid student and course.");return;
             }
             if(year==null||!year.matches("20\\d{2}-\\d{2}")||Integer.parseInt(year.substring(5))!=((Integer.parseInt(year.substring(0,4))+1)%100)){
                 resp.sendError(400,"Academic year must use the format YYYY-YY, for example 2026-27.");return;
@@ -38,7 +39,7 @@ public class EnrollmentServlet extends HttpServlet {
             if(semester==null||!semester.matches("\\d{1,2}")||Integer.parseInt(semester)<1||Integer.parseInt(semester)>12){
                 resp.sendError(400,"Semester must be between 1 and 12.");return;
             }
-            dao.save(Integer.parseInt(student),Integer.parseInt(course),year,Integer.parseInt(semester));
+            dao.save(studentId,courseId,year,Integer.parseInt(semester));
             resp.sendRedirect(req.getContextPath()+"/enrollments?message=saved");
         }catch(Exception e){throw new ServletException("Unable to save enrollment. The student may already be enrolled in this course for that academic year and semester.",e);}
     }
